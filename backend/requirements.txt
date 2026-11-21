@@ -23,7 +23,7 @@ python-multipart==0.0.20
 slowapi==0.1.9
 
 # --- AI classification (optional; app falls back to local NLP if absent) ---
-google-generativeai==0.8.3
+google-generativeai==0.8.6
 
 # --- Observability (optional) ---
 prometheus-client==0.21.1
