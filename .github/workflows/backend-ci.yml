@@ -1,0 +1,58 @@
+name: Backend CI
+
+on:
+  push:
+    paths:
+      - "backend/**"
+      - ".github/workflows/backend-ci.yml"
+  pull_request:
+    paths:
+      - "backend/**"
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    env:
+      # Deliberately matches the defaults test_auth_and_admin.py falls
+      # back to via os.environ.setdefault, so admin login in tests works
+      # whether or not this workflow sets them explicitly.
+      JWT_SECRET_KEY: ci-test-secret-key
+      ADMIN_EMAIL: admin@mediflow.ai
+      ADMIN_PASSWORD: TestPass123!
+      RATE_LIMIT_ENABLED: "false"
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+          cache-dependency-path: backend/requirements.txt
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Lint (ruff)
+        run: |
+          pip install ruff
+          ruff check .
+
+      - name: Verify migrations apply cleanly to a fresh database
+        run: |
+          alembic upgrade head
+          alembic current
+
+      - name: Verify migrations round-trip cleanly (downgrade + re-upgrade)
+        run: |
+          alembic downgrade base
+          alembic upgrade head
+
+      - name: Seed reference dataset (hospitals/doctors)
+        run: python seed.py
+
+      - name: Run tests
+        run: pytest -v

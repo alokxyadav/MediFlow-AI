@@ -1,0 +1,44 @@
+name: Bug report
+description: Report something that is not working as expected
+labels: ["bug"]
+body:
+  - type: textarea
+    id: summary
+    attributes:
+      label: What happened?
+      description: A clear description of the problem and what you expected instead.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Go to ...
+        2. Click ...
+        3. See error
+    validations:
+      required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - Backend API
+        - Frontend
+        - Scheduling or matching logic
+        - Authentication
+        - Deployment or Docker
+        - Documentation
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: OS, browser or device, Python and Node versions, how you are running it (Docker, manual).
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs or screenshots
+      description: Include the X-Request-ID response header if the problem involves an API error. Do not paste secrets.

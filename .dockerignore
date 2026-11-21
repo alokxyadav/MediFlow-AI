@@ -1,0 +1,12 @@
+.git
+.github
+**/__pycache__
+**/*.pyc
+backend/.env
+backend/mediflow.db
+backend/.pytest_cache
+frontend/node_modules
+frontend/dist
+frontend/.env
+*.md
+.DS_Store

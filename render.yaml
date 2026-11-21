@@ -1,0 +1,83 @@
+# Render Blueprint - deploys the full MediFlow AI stack (Postgres +
+# backend API + frontend) from this one file.
+#
+# Usage: https://render.com/deploy?repo=<your-fork-url>
+# or, from the Render dashboard: New -> Blueprint -> select this repo.
+#
+# Render will prompt for the `sync: false` values below (ADMIN_PASSWORD,
+# CORS_ORIGINS, VITE_API_BASE_URL) before the first deploy - everything
+# else is wired up automatically between services.
+#
+# Render's YAML schema evolves between versions; this file uses the
+# long-standing `env:`/`type:` field names rather than newer aliases
+# that may exist in current docs but weren't verified against a live
+# deploy here. If Render's blueprint parser rejects a field, check
+# https://render.com/docs/blueprint-spec for your account's current
+# schema and adjust - the two services and one database below are the
+# complete picture of what needs to exist either way.
+#
+# Two settings need a manual step after the first deploy (Render can't
+# know a service's own URL before it exists) - see docs/DEPLOYMENT.md
+# for exactly what to do: set CORS_ORIGINS on the backend, set
+# VITE_API_BASE_URL on the frontend, then redeploy the frontend.
+
+databases:
+  - name: mediflow-db
+    databaseName: mediflow
+    user: mediflow
+    plan: free
+    postgresMajorVersion: "16"
+
+services:
+  - type: web
+    name: mediflow-backend
+    env: docker
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    plan: free
+    healthCheckPath: /api/health/ready
+    envVars:
+      - key: ENV
+        value: production
+      - key: DEBUG
+        value: "false"
+      - key: DATABASE_URL
+        fromDatabase:
+          name: mediflow-db
+          property: connectionString
+      - key: JWT_SECRET_KEY
+        generateValue: true
+      - key: ADMIN_EMAIL
+        value: admin@mediflow.ai
+      - key: ADMIN_PASSWORD
+        sync: false # set a real password in the Render dashboard before first deploy
+      - key: CORS_ORIGINS
+        sync: false # set to your frontend's URL after its first deploy (see docs/DEPLOYMENT.md)
+      - key: ALLOWED_HOSTS
+        value: "*" # tighten to your backend's own onrender.com hostname once known
+      - key: RATE_LIMIT_ENABLED
+        value: "true"
+      - key: METRICS_ENABLED
+        value: "true"
+      - key: GEMINI_API_KEY
+        sync: false # optional - leave blank to use the local fallback classifier
+
+  - type: web
+    name: mediflow-frontend
+    env: static
+    buildCommand: cd frontend && npm install && npm run build
+    staticPublishPath: ./frontend/dist
+    envVars:
+      - key: VITE_API_BASE_URL
+        sync: false # Vite bakes this in at build time, so it can't be
+        # auto-linked to the backend service's URL the way DATABASE_URL
+        # is linked above (that URL isn't knowable until the backend's
+        # first deploy completes, and build-time env vars can't be
+        # filled in after the fact). After the backend deploys, set
+        # this to https://<your-backend-service>.onrender.com/api in
+        # the Render dashboard, then trigger a manual redeploy of this
+        # static site so the build picks it up. See docs/DEPLOYMENT.md.
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html

@@ -1,0 +1,38 @@
+# --- Core web framework ---
+fastapi==0.115.6
+uvicorn[standard]==0.32.1
+gunicorn==23.0.0
+
+# --- Database ---
+sqlalchemy==2.0.36
+alembic==1.20.0          # schema migrations - see backend/alembic/README.md
+psycopg2-binary==2.9.10   # PostgreSQL driver (production DB)
+
+# --- Config / env ---
+pydantic==2.10.3
+pydantic-settings==2.6.1
+python-dotenv==1.0.1
+
+# --- Auth / security ---
+# NOTE: passlib 1.7.4's bcrypt backend detection breaks on bcrypt>=4.1,
+# so bcrypt is pinned explicitly. Do not upgrade bcrypt without testing.
+bcrypt==4.0.1
+passlib[bcrypt]==1.7.4
+python-jose[cryptography]==3.3.0
+python-multipart==0.0.20
+slowapi==0.1.9
+
+# --- AI classification (optional; app falls back to local NLP if absent) ---
+google-generativeai==0.8.3
+
+# --- Observability (optional) ---
+prometheus-client==0.21.1
+# Uncomment to enable Sentry error tracking (set SENTRY_DSN in .env):
+# sentry-sdk[fastapi]==2.19.2
+
+# --- Testing ---
+pytest==8.3.4
+httpx==0.28.1
+
+# --- Utilities ---
+email-validator==2.2.0

@@ -1,0 +1,62 @@
+# Local production-like stack: Postgres + backend API + frontend (nginx).
+#
+# Quick start:
+#   cp backend/.env.example backend/.env   # edit JWT_SECRET_KEY / ADMIN_PASSWORD
+#   docker compose up --build
+#
+# Frontend:  http://localhost:5173
+# Backend:   http://localhost:8000  (docs at /docs)
+
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: mediflow
+      POSTGRES_PASSWORD: mediflow
+      POSTGRES_DB: mediflow
+    volumes:
+      - mediflow_pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U mediflow"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    ports:
+      - "5432:5432"
+
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      ENV: production
+      DEBUG: "false"
+      DATABASE_URL: postgresql://mediflow:mediflow@db:5432/mediflow
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY:-please-set-a-real-secret-in-.env}
+      ADMIN_EMAIL: ${ADMIN_EMAIL:-admin@mediflow.ai}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-ChangeMe123!}
+      CORS_ORIGINS: http://localhost:5173,http://127.0.0.1:5173
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+      WEB_CONCURRENCY: "2"
+    ports:
+      - "8000:8000"
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        VITE_API_BASE_URL: http://localhost:8000/api
+    restart: unless-stopped
+    depends_on:
+      - backend
+    ports:
+      - "5173:80"
+
+volumes:
+  mediflow_pg_data:
